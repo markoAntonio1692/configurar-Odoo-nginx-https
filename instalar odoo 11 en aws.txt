@@ -1,0 +1,61 @@
+ifco#ingresar como usuario root
+
+sudo apt-get update
+sudo adduser --disabled-password --gecos "Odoo" odoo
+usermod -aG sudo odoo
+sudo apt-get install postgresql postgresql-server-dev-9.5 -y
+sudo su -c "createuser -s odoo" postgres
+
+#CREAMOS LAS DEPENDENCIAS EN PYTHON PARA ODOO
+sudo apt-get install git python3-pip python3-dev libxml2-dev libxslt1-dev libevent-dev \
+libsasl2-dev libldap2-dev libpq-dev libpng12-dev libjpeg-dev \
+poppler-utils node-less node-clean-css -y
+
+#INSTALAMOS ALGUNAS LIBRERIAS EXTRAS DE PYTHON 
+wget https://raw.githubusercontent.com/odoo/odoo/11.0/requirements.txt
+sudo -H pip3 install -r requirements.txt
+
+#DESCARGANDO PAQUETES DE ODOO SERVER
+sudo su - odoo
+git clone https://github.com/odoo/odoo.git /home/odoo/odoo-11.0 -b 11.0 --depth=1
+#EJECUTAMOS EL SIGUIENTE COMANDO, TERMINADO EL LOG PRECIONAR CTRL+C 
+/home/odoo/odoo-11.0/odoo-bin
+#VAMOS A CREAR EL ARCHIVO DE CONFIGURACION DE ODOO
+/home/odoo/odoo-11.0/odoo-bin --save --stop-after-init
+
+#SALIMOS DE SESION DEL USUARIO ODOO, INGRESAMOS COMO ROOT
+sudo su 
+sudo mkdir /etc/odoo
+sudo cp /home/odoo/.odoorc /etc/odoo/odoo.conf
+sudo chown -R odoo /etc/odoo
+#CREAMOS EL DIRECTORIO DONDE SE ALMACENARA LOS LOG
+sudo mkdir /var/log/odoo
+sudo chown odoo /var/log/odoo
+
+#EDITAMOS EL FICHERO DE CONFIGURACION DE ODOO SERVER, BUSCAMOS EL PARAMETRO #"logfile=none", Y LOMODIFCAMOS POR: "logfile = /var/log/odoo/odoo-server.log" (sin comillas) EN :
+sudo nano /etc/odoo/odoo.conf
+
+#SCRIPT DE INICIO AUTOMATICO  DE ODOO-SERVER
+sudo cp /home/odoo/odoo-11.0/debian/init /etc/init.d/odoo
+sudo chmod +x /etc/init.d/odoo
+
+#CREAMOS EL SIGUIENTE ENLACE PARA EJECUTAR ODOO
+sudo ln -s /home/odoo/odoo-11.0/odoo-bin /usr/bin/odoo
+sudo chown -h odoo /usr/bin/odoo
+
+#HACEMOS QUE ODOO SE INICIE AUTOMATICAMENTE CUANDO SE REINICIE NUESTRO SERVIDOR
+sudo update-rc.d odoo defaults
+
+#INICIAMOS ODOO
+sudo /etc/init.d/odoo start
+
+#PODEMOS MIRAR EL LOG EN NUESTRA TERMINAL  
+tail -f /var/log/odoo/odoo-server.log
+
+#AGREGAMOS EL PUERTO 8069 
+ufw allow 8069
+
+#INGRESAMOS A ODOO DESDE LA WEB CON NUSETRA IP EN EL PUERTO 8069
+ACCESOS:
+admin 
+admin
